@@ -1,12 +1,12 @@
 use wordle_solver::algorithms::Naive;
-use wordle_solver::play;
+use wordle_solver::Wordle;
 
-const GAMES: &str = include_str!("./answers.txt");
+const GAMES: &str = include_str!("../answers.txt");
 
 fn main() {
-    let guesser = Naive::new();
-
+    let w = Wordle::new();
     for answer in GAMES.split_whitespace() {
-        play(answer, guesser);
+        let guesser = Naive::new();
+        w.play(answer, guesser);
     }
 }
