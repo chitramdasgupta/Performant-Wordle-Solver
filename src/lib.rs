@@ -19,21 +19,30 @@ impl Wordle {
         }
     }
 
+    // Plays one session of the game
+    // answer: The answer for this session
+    // guesser: a type that generates guesses based on the history of previous guesses
     pub fn play<G: Guesser>(&self, answer: &'static str, mut guesser: G) -> Option<usize> {
+        // Keep track of the guesses made in this session
         let mut history = Vec::new();
 
+        // We restrict ourselves to 32 guesses
         for i in 1..=32 {
+            // makes a guess based on the history of previous guesses on this session
             let guess = guesser.guess(&history);
             if guess == answer {
+                // If successful return the guess number
                 return Some(i);
             }
 
+            // Make sure that the guessed word is in the dictionary
             assert!(
                 self.dictionary.contains(&*guess),
                 "guess '{}' is not in the dictionary",
                 guess
             );
 
+            // Compute the correctness of the guess to find out which characters are which color
             let correctness = Correctness::compute(answer, &guess);
 
             history.push(Guess {
@@ -76,6 +85,7 @@ impl Correctness {
                 used[i] = true;
             }
         }
+
         for (i, g) in guess.chars().enumerate() {
             if c[i] == Correctness::Correct {
                 // Already marked green
@@ -96,6 +106,9 @@ impl Correctness {
         c
     }
 
+    // Generates all possible correctness patterns for a word
+    // This function returns an iterator, which produces items
+    // where each item is an array of 5 Correctness values
     pub fn patterns() -> impl Iterator<Item = [Self; 5]> {
         itertools::iproduct!(
             [Self::Correct, Self::Misplaced, Self::Wrong],
@@ -109,11 +122,12 @@ impl Correctness {
 }
 
 pub struct Guess {
-    pub word: String,
-    pub mask: [Correctness; 5],
+    pub word: String, // A guess made by the guesser type
+    pub mask: [Correctness; 5], // an array with the colors made for this word against the correct answer
 }
 
 impl Guess {
+    // Checks whether the given word matches the correctness pattern of the guessed word
     pub fn matches(&self, word: &str) -> bool {
         assert_eq!(self.word.len(), 5);
         assert_eq!(word.len(), 5);

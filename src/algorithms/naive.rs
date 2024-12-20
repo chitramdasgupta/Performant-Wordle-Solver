@@ -2,10 +2,12 @@ use crate::{Correctness, Guess, Guesser, DICTIONARY};
 use std::collections::HashMap;
 
 pub struct Naive {
+    // The remaining words from which  we can guess the word
     remaining: HashMap<&'static str, usize>,
 }
 
 impl Naive {
+    // We will start with all the dictionary words as remaining (can be selected for a guess)
     pub fn new() -> Self {
         Naive {
             remaining: HashMap::from_iter(DICTIONARY.lines().map(|line| {
@@ -27,16 +29,18 @@ struct Candidate {
 
 impl Guesser for Naive {
     fn guess(&mut self, history: &[Guess]) -> String {
+        // Only retain words that match the correctness pattern of the last guessed word
         if let Some(last) = history.last() {
             self.remaining.retain(|word, _| last.matches(word));
         }
+        // Return "tares" as the first guess
         if history.is_empty() {
             return "tares".to_string();
         }
 
         let remaining_count: usize = self.remaining.iter().map(|(_, &c)| c).sum();
 
-        let mut best: Option<Candidate> = None;
+        let mut best: Option<Candidate> = None; // This is the best possible guess
         for (&word, _) in &self.remaining {
             let mut sum = 0.0;
             for pattern in Correctness::patterns() {
@@ -59,6 +63,7 @@ impl Guesser for Naive {
                 let p_of_this_pattern = in_pattern_total as f64 / remaining_count as f64;
                 sum += p_of_this_pattern * p_of_this_pattern.log2();
             }
+
             let goodness = -sum;
             if let Some(c) = best {
                 // Is this one better?
@@ -69,6 +74,7 @@ impl Guesser for Naive {
                 best = Some(Candidate { word, goodness });
             }
         }
+
         best.unwrap().word.to_string()
     }
 }
